@@ -15,8 +15,9 @@ This card give you a table generated with data from the [feedparser custom compo
 
 | Name | Type | Requirement | Description
 | title | string | **Required** | Column header to display.
-| field | string **Required** | key values of the entity that you wish to display.
-| type | string | **Optional** | options are `image` and `link`. Default is `text.
+| field | string **Required** | key value of the entity that you wish to display.
+| add_link | string | **Optional** | key value of entity that has the link property to use.
+| type | string | **Optional** | options are `image` (must have a <url> property. Default is `text`.
 | style | object | **Optional** | CSS styles to apply to this column.
 
 
@@ -50,6 +51,18 @@ Add a custom element in your `ui-lovelace.yaml`
 ```yaml
       - type: custom:list-card
         entity: sensor.engineering_feed
+        title: Engineering Feed
+        columns:
+          - title: ''
+            type: image
+            add_link: link
+            field: image
+          - title: Title
+            field: title
+            style:
+              - white-space: nowrap
+          - title: Description
+            field: description
 ```
 
 ![example](example.png)
