@@ -1,6 +1,6 @@
 # List Card
 
-This card give you a table generated with data from the [feedparser custom component](https://github.com/custom-components/sensor.feedparser).\
+This card give you a table generated with data from the [feedparser custom component](https://github.com/custom-components/sensor.feedparser).
 
 ## Options
 
