@@ -15,6 +15,7 @@ This card give you a table generated with data from the [feedparser custom compo
 ## Column object
 
 | Name | Type | Requirement | Description
+| ---- | ---- | ------- | -----------
 | title | string | **Required** | Column header to display.
 | field | string **Required** | Key value of the entity that you wish to display.
 | add_link | string | **Optional** | Key value of entity that has the link property to use.
