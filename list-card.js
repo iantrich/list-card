@@ -76,7 +76,6 @@ class ListCard extends HTMLElement {
         }
       }
 
-      console.log(style.textContent);
       content.id = "container";
       card.header = cardConfig.title;
       card.appendChild(content);
@@ -151,7 +150,11 @@ class ListCard extends HTMLElement {
 
                     if (columns[column].hasOwnProperty('type')) {
                       if (columns[column].type === 'image') {
-                        card_content += `<img src="${feed[entry][columns[column].field][0].url}" width="70" height="90">`;
+                        if (feed[entry][columns[column].field][0].hasOwnProperty('url')) {
+                            card_content += `<img src="${feed[entry][columns[column].field][0].url}" width="70" height="90">`;
+                          } else {
+                            card_content += `<img src="${feed[entry][columns[column].field]}" width="70" height="90">`;
+                          }
                       }
                       // else if (columns[column].type === 'button') {
                       //   card_content += `<paper-button raised>${feed[entry][columns[column].button_text]}</paper-button>`;

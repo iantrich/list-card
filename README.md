@@ -17,9 +17,9 @@ This card give you a table generated with data from the [feedparser custom compo
 | Name | Type | Requirement | Description
 | ---- | ---- | ------- | -----------
 | title | string | **Required** | Column header to display.
-| field | string | **Required** | Key value of the entity that you wish to display.
-| add_link | string | **Optional** | Key value of entity that has the link property to use.
-| type | string | **Optional** | Options are `image` (must have a <url> property. Default is `text`.
+| field | string **Required** | key value of the entity that you wish to display.
+| add_link | string | **Optional** | key value of entity that has the link property to use.
+| type | string | **Optional** | options are `image`. Default is `text`.
 | style | object | **Optional** | CSS styles to apply to this column.
 
 
