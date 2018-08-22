@@ -26,6 +26,8 @@ From left to right: [feedparser](https://github.com/custom-components/sensor.fee
 | type | string | **Optional** | options are `image`. Default is `text`.
 | style | object | **Optional** | CSS styles to apply to this column.
 | regex | string | **Optional** | Regex string to apply to field.
+| prefix | string | **Optional** | String to prefix to field.
+| postfix | string | **Optional** | String to postfix to field.
 
 
 ## Installation
