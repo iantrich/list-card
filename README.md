@@ -1,6 +1,6 @@
 # List Card
 
-This card give you a table generated with data from the [feedparser custom component](https://github.com/custom-components/sensor.feedparser).\
+This card give you a table generated with data from the [feedparser custom component](https://github.com/custom-components/sensor.feedparser).
 
 ## Options
 
@@ -9,11 +9,13 @@ This card give you a table generated with data from the [feedparser custom compo
 | type | string | **Required** | `custom:list-card`
 | entity | string | **Required** | The entity_id of the entity you want to show.
 | title | string | **Optional** | Add a custom title to the card.
+| row_limit | number | **Optional** | Limit the number of rows to display.
 | columns | object | **Optional** | List of columns to display.
 
 ## Column object
 
 | Name | Type | Requirement | Description
+| ---- | ---- | ------- | -----------
 | title | string | **Required** | Column header to display.
 | field | string **Required** | key value of the entity that you wish to display.
 | add_link | string | **Optional** | key value of entity that has the link property to use.

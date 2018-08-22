@@ -4,20 +4,20 @@ class ListCard extends HTMLElement {
       super();
       this.attachShadow({ mode: 'open' });
     }
-  
+
     setConfig(config) {
       if (!config.entity) {
         throw new Error('Please define an entity');
       }
-  
+
       const root = this.shadowRoot;
       if (root.lastChild) root.removeChild(root.lastChild);
-  
+
       const cardConfig = Object.assign({}, config);
       if (!cardConfig.title) cardConfig.title = 'List';
-  
+
       const columns = cardConfig.columns;
-  
+
       const card = document.createElement('ha-card');
       const content = document.createElement('div');
       const style = document.createElement('style');
@@ -51,16 +51,16 @@ class ListCard extends HTMLElement {
               font-weight: normal;
             }
           `;
-  
+
       // Go through columns and add CSS sytling to each column that is defined
       if (columns) {
         for (let column in columns) {
           if (columns.hasOwnProperty(column) && columns[column].hasOwnProperty('style')) {
             let styles = columns[column]['style'];
-            
+
             style.textContent += `
               .${columns[column].field} {`
-  
+
             for (let index in styles) {
               if (styles.hasOwnProperty(index)) {
                 for (let s in styles[index]) {
@@ -70,12 +70,12 @@ class ListCard extends HTMLElement {
                 }
               }
             }
-  
+
             style.textContent += `}`;
           }
         }
       }
-  
+
       content.id = "container";
       card.header = cardConfig.title;
       card.appendChild(content);
@@ -83,23 +83,25 @@ class ListCard extends HTMLElement {
       root.appendChild(card);
       this._config = cardConfig;
     }
-  
+
     set hass(hass) {
       const config = this._config;
       const root = this.shadowRoot;
       const card = root.lastChild;
-  
+
       if (hass.states[config.entity]) {
         const feed = hass.states[config.entity].attributes;
         const columns = config.columns;
         this.style.display = 'block';
         const rowLimit = config.row_limit ? config.row_limit : Object.keys(feed).length;
         let rows = 0;
-  
+
         if (feed !== undefined && Object.keys(feed).length > 0) {
           let card_content = '<table><thread><tr>';
-  
+
           if (!columns) {
+            card_content += `<tr>`;
+
             for (let column in feed[0]) {
               if (feed[0].hasOwnProperty(column)) {
                 card_content += `<th>${feed[0][column]}</th>`;
@@ -112,12 +114,12 @@ class ListCard extends HTMLElement {
               }
             }
           }
-  
+
           card_content += `</tr></thead><tbody>`;
-  
+
           for (let entry in feed) {
             if (rows >= rowLimit) break;
-  
+
             if (feed.hasOwnProperty(entry)) {
               if (!columns) {
                 for (let field in feed[entry]) {
@@ -126,14 +128,26 @@ class ListCard extends HTMLElement {
                   }
                 }
               } else {
+                let has_field = true;
+
+                for (let column in columns) {
+                  if (!feed[entry].hasOwnProperty(columns[column].field)) {
+                    has_field = false;
+                    break;
+                  }
+                }
+
+                if (!has_field) continue;
+                card_content += `<tr>`;
+
                 for (let column in columns) {
                   if (columns.hasOwnProperty(column)) {
                     card_content += `<td class=${columns[column].field}>`;
-  
+
                     if (columns[column].hasOwnProperty('add_link')) {
-                      card_content +=  `<a href="${feed[entry][columns[column].add_link]}" target='_blank'>`; 
+                      card_content +=  `<a href="${feed[entry][columns[column].add_link]}" target='_blank'>`;
                     }
-  
+
                     if (columns[column].hasOwnProperty('type')) {
                       if (columns[column].type === 'image') {
                         if (feed[entry][columns[column].field][0].hasOwnProperty('url')) {
@@ -148,21 +162,21 @@ class ListCard extends HTMLElement {
                     } else {
                       card_content += `${feed[entry][columns[column].field]}`;
                     }
-  
+
                     if (columns[column].hasOwnProperty('add_link')) {
-                      card_content +=  `</a>`; 
-                    } 
-  
+                      card_content +=  `</a>`;
+                    }
+
                     card_content += `</td>`;
                   }
                 }
               }
-  
+
               card_content += `</tr>`;
               ++rows;
             }
           }
-  
+
           root.lastChild.hass = hass;
           card_content += `</tbody></table>`;
           root.getElementById('container').innerHTML = card_content;
@@ -173,10 +187,10 @@ class ListCard extends HTMLElement {
         this.style.display = 'none';
       }
     }
-  
+
     getCardSize() {
       return 1;
     }
   }
-  
+
   customElements.define('list-card', ListCard);
