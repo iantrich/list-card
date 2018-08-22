@@ -64,7 +64,6 @@ class ListCard extends HTMLElement {
             for (let index in styles) {
               if (styles.hasOwnProperty(index)) {
                 for (let s in styles[index]) {
-                  console.log(s + ': ' + styles[index][s]);
                   style.textContent += `
                   ${s}: ${styles[index][s]};`;
                 }
