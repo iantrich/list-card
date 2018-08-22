@@ -1,6 +1,10 @@
 # List Card
 
-This card give you a table generated with data from the [feedparser custom component](https://github.com/custom-components/sensor.feedparser).
+This card give you a table generated with data from the [feedparser custom component](https://github.com/custom-components/sensor.feedparser) or any other sensor that provides data as a list of attributes.
+
+![example](example.png)
+
+From left to right: [feedparser](https://github.com/custom-components/sensor.feedparser) | [aftership](https://github.com/custom-components/sensor.aftership) | [untappd](https://github.com/custom-components/sensor.untapped)
 
 ## Options
 
@@ -67,5 +71,3 @@ Add a custom element in your `ui-lovelace.yaml`
           - title: Description
             field: description
 ```
-
-![example](example.png)
