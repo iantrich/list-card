@@ -9,7 +9,7 @@ Hey dude! Help me out for a couple of :beers: or a :coffee:!
 
 # List Card
 
-This card give you a table generated with data from the [feedparser custom component](https://github.com/custom-components/sensor.feedparser) or any other sensor that provides data as a list of attributes.
+This card for [Lovelace](https://www.home-assistant.io/lovelace) on [Home Assistant](https://www.home-assistant.io/) that gives you a table generated with data from the [feedparser custom component](https://github.com/custom-components/sensor.feedparser) or any other sensor that provides data as a list of attributes.
 
 ![example](example.png)
 
