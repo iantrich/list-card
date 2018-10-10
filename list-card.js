@@ -14,10 +14,7 @@ class ListCard extends HTMLElement {
       if (root.lastChild) root.removeChild(root.lastChild);
 
       const cardConfig = Object.assign({}, config);
-      if (!cardConfig.title) cardConfig.title = 'List';
-
       const columns = cardConfig.columns;
-
       const card = document.createElement('ha-card');
       const content = document.createElement('div');
       const style = document.createElement('style');
@@ -76,7 +73,7 @@ class ListCard extends HTMLElement {
       }
 
       content.id = "container";
-      card.header = cardConfig.title;
+      cardConfig.title ? card.header = cardConfig.title : null;
       card.appendChild(content);
       card.appendChild(style);
       root.appendChild(card);
