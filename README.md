@@ -11,6 +11,8 @@ Hey dude! Help me out for a couple of :beers: or a :coffee:!
 
 This card for [Lovelace](https://www.home-assistant.io/lovelace) on [Home Assistant](https://www.home-assistant.io/) that gives you a table generated with data from the [feedparser custom component](https://github.com/custom-components/sensor.feedparser) or any other sensor that provides data as a list of attributes.
 
+Great resource for further filtering your feeds is [siftrss](https://siftrss.com/)
+
 ![example](example.png)
 
 From left to right: [feedparser](https://github.com/custom-components/sensor.feedparser) | [aftership](https://github.com/custom-components/sensor.aftership) | [untappd](https://github.com/custom-components/sensor.untapped)
