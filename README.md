@@ -45,7 +45,7 @@ From left to right: [feedparser](https://github.com/custom-components/sensor.fee
 
 ### Step 1
 
-Save [list-card|https://raw.githubusercontent.com/custom-cards/list-card/master/list-card.js] to `<config directory>/www/list-card.js` on your Home Assistant instanse.
+Save [list-card](https://raw.githubusercontent.com/custom-cards/list-card/master/list-card.js) to `<config directory>/www/list-card.js` on your Home Assistant instanse.
 
 **Example:**
 
