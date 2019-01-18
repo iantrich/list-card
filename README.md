@@ -84,3 +84,5 @@ Add a custom element in your `ui-lovelace.yaml`
           - title: Description
             field: description
 ```
+
+[Troubleshooting](https://github.com/thomasloven/hass-config/wiki/Lovelace-Plugins)
