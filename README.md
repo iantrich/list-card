@@ -30,7 +30,7 @@ From left to right: [feedparser](https://github.com/custom-components/sensor.fee
 | entity | string | **Required** | The entity_id of the entity you want to show.
 | title | string | **Optional** | Add a custom title to the card.
 | row_limit | number | **Optional** | Limit the number of rows to display.
-| columns | object | **Optional** | List of columns to display.
+| columns | object | **Required** | List of columns to display.
 
 ## Column object
 
