@@ -11,6 +11,9 @@ This card for [Lovelace](https://www.home-assistant.io/lovelace) on [Home Assist
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
+[![Twitter][twitter]][twitter]
+[![Github][github]][github]
+
 ## Support
 Hey dude! Help me out for a couple of :beers: or a :coffee:!
 
@@ -102,3 +105,5 @@ Add a custom element in your `ui-lovelace.yaml`
 [maintenance-shield]: https://img.shields.io/badge/maintainer-Ian%20Richardson%20%40iantrich-blue.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/custom-cards/list-card.svg?style=for-the-badge
 [releases]: https://github.com/custom-cards/list-card/releases
+[twitter]: https://img.shields.io/twitter/follow/iantrich.svg?style=social
+[github]: https://img.shields.io/github/followers/iantrich.svg?style=social
