@@ -86,7 +86,7 @@ class ListCard extends HTMLElement {
       const card = root.lastChild;
 
       if (hass.states[config.entity]) {
-        const feed = hass.states[config.entity].attributes;
+        const feed = config.feed_attribute ? hass.states[config.entity].attributes[config.feed_attribute] : hass.states[config.entity].attributes;
         const columns = config.columns;
         this.style.display = 'block';
         const rowLimit = config.row_limit ? config.row_limit : Object.keys(feed).length;
