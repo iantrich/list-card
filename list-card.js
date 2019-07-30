@@ -160,9 +160,11 @@ class ListCard extends HTMLElement {
 
                       if (columns[column].hasOwnProperty('regex')) {
                         newText = new RegExp(columns[column].regex).exec(feed[entry][columns[column].field]);
-                      } else if (columns[column].hasOwnProperty('prefix')) {
+                      } 
+                      if (columns[column].hasOwnProperty('prefix')) {
                         newText = columns[column].prefix + newText;
-                      } else if (columns[column].hasOwnProperty('postfix')) {
+                      } 
+                      if (columns[column].hasOwnProperty('postfix')) {
                         newText += columns[column].postfix;
                       }
 
