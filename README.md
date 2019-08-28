@@ -81,6 +81,7 @@ Add a custom element in your `ui-lovelace.yaml`
       - type: custom:list-card
         entity: sensor.engineering_feed
         title: Engineering Feed
+        feed_attribute: entries
         columns:
           - title: ''
             type: image
