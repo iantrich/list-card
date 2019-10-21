@@ -1,4 +1,4 @@
-# List Card
+# List Card by [@iantrich](https://www.github.com/iantrich)
 
 This card for [Lovelace](https://www.home-assistant.io/lovelace) on [Home Assistant](https://www.home-assistant.io/) that gives you a table generated with data from the [feedparser custom component](https://github.com/custom-components/sensor.feedparser) or any other sensor that provides data as a list of attributes.
 
