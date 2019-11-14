@@ -1,0 +1,30 @@
+default_config:
+lovelace:
+  mode: yaml
+homeassistant:
+  customize:
+    sensor.list:
+      list:
+        [
+          {
+            "title": "Fresh Air",
+            "link": "http://www.npr.org/programs/fresh-air/",
+            "description": "Fresh Air from WHYY, the Peabody Award-winning weekday magazine of contemporary arts and issues, is one of public radio's most popular programs. Hosted by Terry Gross, the show features intimate conversations with today's biggest luminaries.",
+          },
+          {
+            "title": "Home Assistant Podcast",
+            "link": "https://hasspodcast.io/",
+            "description":
+              "Join hosts Phil Hawthorne and Rohan Karamandi each fortnight as they
+              explore the newest Home Assistant release and the latest Home Automation
+              news. Featuring guests who use or contribute to Home Assistant, the
+              podcast aims to inspire new ways to make your home smarter.",
+          },
+        ]
+
+sensor:
+  - platform: template
+    sensors:
+      list:
+        value_template: 4
+        icon_template: "mdi:rss"

@@ -1,0 +1,10 @@
+resources:
+  - url: http://127.0.0.1:5000/list-card.js
+    type: module
+views:
+  - cards:
+      - type: custom:list-card
+        entity: sensor.list
+        feed_attribute: list
+        title: List Card Development
+        columns: title
