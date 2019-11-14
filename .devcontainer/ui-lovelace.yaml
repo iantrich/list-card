@@ -7,4 +7,10 @@ views:
         entity: sensor.list
         feed_attribute: list
         title: List Card Development
-        columns: title
+        columns:
+          title:
+            title: Title
+            sortable: true
+            image: true
+          description:
+            title: Description

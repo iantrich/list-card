@@ -4,7 +4,7 @@ import { TemplateResult } from 'lit-html';
 export interface ListCardConfig {
   type: string;
   entity: string;
-  columns: ColumnConfig;
+  columns: DataTableColumnContainer;
   feed_attribute?: string;
   title?: string;
   row_limit?: string;
@@ -36,7 +36,8 @@ export interface DataTableSortColumnData {
 
 export interface DataTableColumnData extends DataTableSortColumnData {
   title: string;
-  type?: 'numeric' | 'icon';
+  type?: 'numeric' | 'icon' | 'image';
+  link?: string;
   template?: <T>(data: any, row: T) => TemplateResult;
 }
 

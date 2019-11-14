@@ -84,20 +84,13 @@ export class ListCard extends LitElement {
       `;
     }
 
-    window.setTimeout(load_table, 500);
-
     // TODO Filter to row_limit if set
 
     return html`
       <ha-card .header=${this._config.title}>
         <ha-data-table
-          .columns=${{
-            title: {
-              title: 'Test',
-              sortable: true,
-            },
-          }}
-          .data=${[{ title: 'Title 2' }, { title: 'Title 1' }]}
+          .columns=${this._columns()}
+          .data=${feed}
           @selection-changed=${this._handleAction}
         ></ha-data-table>
       </ha-card>
@@ -119,12 +112,15 @@ export class ListCard extends LitElement {
   }
 
   private _columns(): DataTableColumnContainer {
-    const columns: DataTableColumnContainer = {
-      title: {
-        title: 'Test',
-        sortable: true,
-      },
-    };
+    const columns: DataTableColumnContainer = this._config!.columns;
+
+    for (let [key, value] of Object.entries(columns)) {
+      if (value.type && value.type === 'image') {
+        value.template = () => html`
+          <div>TODO This doesn't work for some reason?</div>
+        `;
+      }
+    }
 
     return columns;
   }
@@ -132,6 +128,7 @@ export class ListCard extends LitElement {
   private _handleAction(ev): void {
     if (this.hass && this._config && ev.detail.action) {
       // TODO
+      // action: link
     }
   }
 
