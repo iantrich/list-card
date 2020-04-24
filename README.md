@@ -52,7 +52,7 @@ From left to right: [feedparser](https://github.com/custom-components/sensor.fee
 
 ## Installation
 
-Use HACS[https://hacs.xyz]
+Use [HACS](https://hacs.xyz)
 
 ### Example Configuration
 
