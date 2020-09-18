@@ -45,10 +45,13 @@ From left to right: [feedparser](https://github.com/custom-components/sensor.fee
 | add_link | string | **Optional** | key value of entity that has the link property to use.
 | type | string | **Optional** | options are `image`. Default is `None`. **Only set this for images, otherwise leave blank**
 | style | object | **Optional** | CSS styles to apply to this column.
+| width | string | **Optional** | If type is image, sets the width of the image. Default 70.
+| height | string | **Optional** | If type is image, sets the width of the image. Default 90.
 | regex | string | **Optional** | Regex string to apply to field.
 | prefix | string | **Optional** | String to prefix to field.
 | postfix | string | **Optional** | String to postfix to field.
 
+* Note: If width **and** height are set to "auto", the image will not be resized. If width **or** height are set to "auto", the aspect ratio of the image will be maintained.
 
 ## Installation
 
