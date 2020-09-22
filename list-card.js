@@ -151,6 +151,8 @@ class ListCard extends HTMLElement {
                           } else {
                             card_content += `<img src="${feed[entry][columns[column].field]}" width="70" height="90">`;
                           }
+                      } else if (columns[column].type === 'icon') {
+                          card_content += `<ha-icon class="column-${columns[column].field}" icon=${feed[entry][columns[column].field]}></ha-icon>`;
                       }
                       // else if (columns[column].type === 'button') {
                       //   card_content += `<paper-button raised>${feed[entry][columns[column].button_text]}</paper-button>`;

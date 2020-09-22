@@ -43,7 +43,7 @@ From left to right: [feedparser](https://github.com/custom-components/sensor.fee
 | title | string | **Required** | Column header to display.
 | field | string | **Required** | key value of the entity that you wish to display.
 | add_link | string | **Optional** | key value of entity that has the link property to use.
-| type | string | **Optional** | options are `image`. Default is `None`. **Only set this for images, otherwise leave blank**
+| type | string | **Optional** | options are `image` and `icon`. Default is `None`. **Only set this for images or icons, otherwise leave blank**
 | style | object | **Optional** | CSS styles to apply to this column.
 | regex | string | **Optional** | Regex string to apply to field.
 | prefix | string | **Optional** | String to prefix to field.
