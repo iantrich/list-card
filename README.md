@@ -55,7 +55,7 @@ From left to right: [feedparser](https://github.com/custom-components/sensor.fee
 
 ## Installation
 
-Use [HACS](https://hacs.xyz)
+Add to [HACS](https://hacs.xyz) as a Custom Repo
 
 ### Example Configuration
 
