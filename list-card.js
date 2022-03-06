@@ -172,7 +172,7 @@ class ListCard extends HTMLElement {
                       let newText = feed[entry][columns[column].field];
 
                       if (columns[column].hasOwnProperty('regex')) {
-                        newText = new RegExp(columns[column].regex).exec(feed[entry][columns[column].field]);
+                        newText = new RegExp(columns[column].regex, 'u').exec(feed[entry][columns[column].field]);
                       } 
                       if (columns[column].hasOwnProperty('prefix')) {
                         newText = columns[column].prefix + newText;
