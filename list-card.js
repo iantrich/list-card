@@ -1,4 +1,4 @@
-console.log(`%clist-card\n%cVersion: ${'0.1.1'}`, 'color: #EED202; font-weight: bold;', '');
+console.log(`%clist-card\n%cVersion: ${'0.1.3'}`, 'color: #EED202; font-weight: bold;', '');
 
 class ListCard extends HTMLElement {
 
@@ -144,6 +144,8 @@ class ListCard extends HTMLElement {
         // turn feed into file columns if it's a file list, otherwise keep as needed
         const feed = config.feed_attribute && config.feed_attribute == "file_list" ? transformedFeed : oldFeed; 
 
+
+
         const columns = config.columns;
         this.style.display = 'block';
         const rowLimit = config.row_limit ? config.row_limit : Object.keys(feed).length;
@@ -163,6 +165,32 @@ class ListCard extends HTMLElement {
             card_content += '</div>';
           }
         
+          // allow sorting on the fields
+          // Sort the feed based on the specified column
+          console.log(config.sort);
+          if (config.sort) {
+            console.log(config.sort.value);
+            if (!config.sort.value) {
+              throw new Error(`You need to specify a value to sort on`);
+            }
+            console.log(config.sort.reverse);
+            const sortField = config.sort.value;
+            const isReverse = config.sort.reverse || false;
+          
+            feed.sort((a, b) => {
+              const valueA = a[sortField];
+              const valueB = b[sortField];
+
+              if (valueA < valueB) {
+                return isReverse ? 1 : -1;
+              }
+              if (valueA > valueB) {
+                return isReverse ? -1 : 1;
+              }
+              return 0;
+            });
+          }
+
           // Generate the data rows
           for (let entry in feed) {
             if (rows >= rowLimit) break;
