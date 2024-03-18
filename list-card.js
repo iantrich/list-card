@@ -16,7 +16,7 @@ class ListCard extends HTMLElement {
       if (root.lastChild) root.removeChild(root.lastChild);
       const cardConfig = Object.assign({}, config);
 
-            // if no columns specified and it's a file list
+            // if no columns are specifically specified and it's a file_list from the folder integration
             if (config.feed_attribute && config.feed_attribute == "file_list" && (!cardConfig.columns || cardConfig.columns.length === 0)) {
               cardConfig.columns = [
                 { title: "Path", field: "path" },
@@ -61,7 +61,8 @@ class ListCard extends HTMLElement {
             }
           `;
 
-      // Go through columns and add CSS styling to each column that is defined
+      // Go through columns and add CSS styling to each column that is defined with the style tag, 
+      // the css class will be the field name of the column.
       if (columns) {
         for (let column in columns) {
           if (columns.hasOwnProperty(column) && columns[column]) {
@@ -85,11 +86,14 @@ class ListCard extends HTMLElement {
           }
         }
       }
+
       content.id = "container";
       cardConfig.title ? card.header = cardConfig.title : null;
+
       card.appendChild(content);
       card.appendChild(style);
       root.appendChild(card);
+      
       this._config = cardConfig;
     }
 
