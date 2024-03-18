@@ -55,6 +55,10 @@ class ListCard extends HTMLElement {
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
+              user-select: text;
+              -webkit-user-select: text;
+              -moz-user-select: text;
+              -ms-user-select: text;
             }
             .actionable {
               cursor: pointer;
@@ -93,7 +97,7 @@ class ListCard extends HTMLElement {
       card.appendChild(content);
       card.appendChild(style);
       root.appendChild(card);
-      
+
       this._config = cardConfig;
     }
 
@@ -218,7 +222,7 @@ class ListCard extends HTMLElement {
                         newText += columns[column].postfix;
                       }
         
-                      card_content += `${newText}`;
+                      card_content += `<span>${newText}</span>`;
                     }
         
                     if (columns[column].hasOwnProperty('add_link')) {
