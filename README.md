@@ -1,3 +1,25 @@
+Additions submitted to @iantrich via pull-request.
+
+Switched from a table to grid view for better styling within the boundaries of the card (often as a table it was extending beyond the card).
+
+Added specific details for the folder integration usage, specifically when the feed_attribute is file_list it automatically creates the following columns: path, name, filename, fullpath, and ext.
+Path is just the path to the file not including the filename (e.g. '/config/www/media/files/')
+Name is the filename including extension or if the name matches the format YYYYMMDDHHmmSS.* it will translate it to human readable date/time in English. (e.g. 'snapshot.jpg or 'Mar 14, 2024, 3:12PM')
+filename is the filename including extension (e.g. 'snapshot.jpg')
+ext is just the extension (e.g. 'jpg')
+
+the add_link will work for any file in your folder integration that is in the www directory. simply add it to your column and it will work. By default add_link is included if no columns are specified.
+
+Actions added for specifically call-service, navigate, and fire-dom-event (part of call service). Any other action would be refused. It would be trivial to add such action if a use case could be made. Regular rules apply for each of these. Anything you include after action is sent to the action and is not part of this card's code but part of the HA built in hass-action code.
+
+Added ability to copy/paste data. Be aware the data updates at the frequency of your sensor so an attempt to "copy" that data might take more than one try if a sensor updates.
+
+Added ability to sort the feed. Use the following in the config at the base.
+sort:
+value: fieldname
+reverse: true (Defaults to false)
+
+
 # List Card by [@iantrich](https://www.github.com/iantrich)
 
 This card for [Lovelace](https://www.home-assistant.io/lovelace) on [Home Assistant](https://www.home-assistant.io/) that gives you a table generated with data from the [feedparser custom component](https://github.com/custom-components/sensor.feedparser) or any other sensor that provides data as a list of attributes.
