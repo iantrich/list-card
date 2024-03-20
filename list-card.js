@@ -1,4 +1,4 @@
-console.log(`%clist-card\n%cVersion: ${'0.1.4'}`, 'color: #EED202; font-weight: bold;background-color: black;', '');
+console.log(`%clist-card\n%cVersion: ${'0.1.5'}`, 'color: #EED202; font-weight: bold;background-color: black;', '');
 
 class ListCard extends HTMLElement {
 
@@ -10,7 +10,7 @@ class ListCard extends HTMLElement {
     setConfig(config) {
       if (!config.entity) {
         throw new Error('Please define an entity');
-      }
+      }      
 
       const root = this.shadowRoot;
       if (root.lastChild) root.removeChild(root.lastChild);
@@ -101,6 +101,39 @@ class ListCard extends HTMLElement {
       this._config = cardConfig;
     }
 
+    transformFeed(oldFeed) {
+      return oldFeed.map(file => {
+        const path = file.substring(0, file.lastIndexOf('/') + 1);
+        const filenameParts = file.split('/').pop().split('.');
+        const filename = filenameParts[0];
+        const extension = filenameParts[filenameParts.length - 1];
+    
+        // Check if the filename matches the expected format (YYYYMMDDHHmmSS)
+        const filenameFormat = /^\d{14}$/;
+    
+        if (filenameFormat.test(filename)) {
+          const fileDate = new Date(filename.slice(0, 4) + '-' + filename.slice(4, 6) + '-' + filename.slice(6, 8) + 'T' + filename.slice(8, 10) + ':' + filename.slice(10, 12) + ':' + filename.slice(12));
+          const formattedDate = fileDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
+    
+          return {
+            path: path,
+            name: formattedDate,
+            filename: filename + "." + extension,
+            fullpath: path + filename + "." + extension,
+            ext: extension
+          };
+        } else {
+          return {
+            path: path,
+            name: filename,
+            filename: filename + "." + extension,
+            fullpath: path + filename + "." + extension,
+            ext: extension
+          };
+        }
+      });
+    }
+
     set hass(hass) {
       const config = this._config;
       const root = this.shadowRoot;
@@ -108,43 +141,7 @@ class ListCard extends HTMLElement {
 
       if (hass.states[config.entity]) {
         const oldFeed = config.feed_attribute ? hass.states[config.entity].attributes[config.feed_attribute] : hass.states[config.entity].attributes;
-        if (config.feed_attribute && config.feed_attribute == "file_list") {
-        // if file_list is supplied as feed_attribute we will transform the data to be compatible with this component
-        const transformedFeed = oldFeed.map(file => {
-          const path = file.substring(0, file.lastIndexOf('/') + 1);
-          const filenameParts = file.split('/').pop().split('.');
-          const filename = filenameParts[0];
-          const extension = filenameParts[filenameParts.length - 1];
-          
-          // Check if the filename matches the expected format (YYYYMMDDHHmmSS)
-          const filenameFormat = /^\d{14}$/;
-          
-          if (filenameFormat.test(filename)) {
-            const fileDate = new Date(filename.slice(0, 4) + '-' + filename.slice(4, 6) + '-' + filename.slice(6, 8) + 'T' + filename.slice(8, 10) + ':' + filename.slice(10, 12) + ':' + filename.slice(12));
-            const formattedDate = fileDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
-            
-            return {
-              path: path,
-              name: formattedDate,
-              filename: filename + "." + extension,
-              fullpath: path + filename + "." + extension,
-              ext: extension
-            };
-          } else {
-            return {
-              path: path,
-              name: filename,
-              filename: filename + "." + extension,
-              fullpath: path + filename + "." + extension,
-              ext: extension
-            };
-          }
-        });
-      }
-        // turn feed into file columns if it's a file list, otherwise keep as needed
-        const feed = config.feed_attribute && config.feed_attribute == "file_list" ? transformedFeed : oldFeed; 
-
-
+        const feed = config.feed_attribute && config.feed_attribute == "file_list" ? this.transformFeed(oldFeed) : oldFeed;
 
         const columns = config.columns;
         this.style.display = 'block';
@@ -155,7 +152,8 @@ class ListCard extends HTMLElement {
           let card_content = '<div class="grid-container">';
         
           // Generate the header row
-          if (columns) {
+          const showHeader = config.show_header !== false;
+          if (columns && showHeader) {
             card_content += '<div class="grid-row">';
             for (let column in columns) {
               if (columns.hasOwnProperty(column)) {
