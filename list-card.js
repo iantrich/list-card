@@ -1,4 +1,4 @@
-console.log(`%clist-card\n%cVersion: ${'0.1.5'}`, 'color: #EED202; font-weight: bold;background-color: black;', '');
+console.log(`%clist-card\n%cVersion: ${'0.1.6'}`, 'color: #EED202; font-weight: bold;background-color: black;', '');
 
 class ListCard extends HTMLElement {
 
@@ -139,7 +139,7 @@ class ListCard extends HTMLElement {
       const root = this.shadowRoot;
       const card = root.lastChild;
 
-      if (hass.states[config.entity]) {
+      if (hass && hass.states[config.entity]) {
         const oldFeed = config.feed_attribute ? hass.states[config.entity].attributes[config.feed_attribute] : hass.states[config.entity].attributes;
         const feed = config.feed_attribute && config.feed_attribute == "file_list" ? this.transformFeed(oldFeed) : oldFeed;
 
