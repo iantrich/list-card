@@ -1,0 +1,20 @@
+default_config:
+demo:
+homeassistant_alerts:
+  enabled: false
+
+template:
+  - sensor:
+      - name: "Feed"
+        state: "3"
+        attributes:
+          entries: >-
+            {{ [{"title": "The hidden technology that could unlock commercial fusion power",
+                 "title_detail": {"type": "text/plain", "language": None, "base": "", "value": "The hidden technology that could unlock commercial fusion power"},
+                 "links": [{"rel": "alternate", "type": "text/html", "href": "https://www.sciencedaily.com/releases/2026/03/260303050622.htm"}],
+                 "link": "https://www.sciencedaily.com/releases/2026/03/260303050622.htm",
+                 "summary": "Fusion energy may be one of the most promising clean power sources of the future—but only if scientists can precisely measure the extreme, fast-moving plasmas that make it possible. A new U.S. Department of Energy–sponsored report urges major investment in advanced diagnostic tools—the high-tech sensors that track plasma temperature, density, and behavior inside fusion systems. Bringing together 70 experts from universities, national labs, and private industry, the workshop identified seven priority areas ranging from burning plasma to full-scale pilot plants.",
+                 "summary_detail": {"type": "text/html", "language": None, "base": "", "value": "Fusion energy may be one of the most promising clean power sources of the future—but only if scientists can precisely measure the extreme, fast-moving plasmas that make it possible. A new U.S. Department of Energy–sponsored report urges major investment in advanced diagnostic tools—the high-tech sensors that track plasma temperature, density, and behavior inside fusion systems. Bringing together 70 experts from universities, national labs, and private industry, the workshop identified seven priority areas ranging from burning plasma to full-scale pilot plants."},
+                 "published": "Tue, Mar 03 06:50 AM",
+                 "id": "https://www.sciencedaily.com/releases/2026/03/260303050622.htm",
+                 "guidislink": false}] }}

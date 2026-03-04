@@ -1,0 +1,39 @@
+{
+  "name": "list-card",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "build:dev": "rollup -c rollup.config.dev.js",
+    "start": "rollup -c rollup.config.dev.js --watch",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier . --check"
+  },
+  "dependencies": {
+    "custom-card-helpers": "2.0.0",
+    "lit": "^3.2.1"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "esbuild": "^0.20.2",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "rollup": "^4.50.1",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "rollup-plugin-serve": "^3.0.0",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.2"
+  },
+  "packageManager": "yarn@4.12.0"
+}
