@@ -36,11 +36,6 @@ This card for [Lovelace](https://www.home-assistant.io/lovelace) on [Home Assist
 [![Twitter][twitter]][twitter]
 [![Github][github]][github]
 
-## Support
-Hey dude! Help me out for a couple of :beers: or a :coffee:!
-
-[![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/zJtVxUAgH)
-
 Great resource for further filtering your feeds is [siftrss](https://siftrss.com/)
 
 ![example](example.png)
@@ -56,7 +51,16 @@ From left to right: [feedparser](https://github.com/custom-components/sensor.fee
 | feed_attribute | string | **Optional** | Attribute containing the feed
 | title | string | **Optional** | Add a custom title to the card.
 | row_limit | number | **Optional** | Limit the number of rows to display.
+| card_height | string/number | **Optional** | Sets max card content height. Number values are treated as px. Default `300px`.
 | columns | object | **Optional** | List of columns to display.
+
+## UI Card Editor
+
+The card now includes a visual editor in Home Assistant (like the boilerplate-card flow) for the base options:
+
+- `entity`, `title`, `feed_attribute`
+- `row_limit`, `card_height`, `show_header`
+- `columns` and `sort` via JSON text areas
 
 ## Column object
 
