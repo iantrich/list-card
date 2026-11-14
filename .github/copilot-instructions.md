@@ -13,7 +13,9 @@ Use these instructions as project-specific guardrails when generating, editing, 
 yarn install
 yarn start
 yarn build
+yarn test
 yarn lint
+yarn typecheck
 ```
 
 ### Primary files
@@ -21,9 +23,8 @@ yarn lint
 - `src/list-card.ts` — main card implementation
 - `src/editor.ts` — visual editor (`LovelaceCardEditor`)
 - `src/types.ts` — card config and type definitions
-- `src/action-handler-directive.ts` — tap/hold/double-tap directive
-- `src/localize/localize.ts` — localization helper
-- `src/localize/languages/en.json` and `src/localize/languages/nb.json` — translation files
+- `src/utils.ts` — pure helpers (field paths, formatting, filtering, sorting); unit-test these in `test/utils.test.ts`
+- `test/` — vitest + happy-dom tests for helpers and the rendered card
 - `rollup.config.js` and `rollup.config.dev.js` — production and dev build config
 
 ## Architecture and patterns
@@ -58,7 +59,6 @@ yarn lint
 
 ## Localization and copy
 
-- Do not hardcode user-facing strings when a localize key should be used.
 - Add new translation keys to both language files currently in the repo (`en.json`, `nb.json`).
 - Keep copy concise, sentence case, and user-facing.
 - Favor consistent terminology across card UI and editor labels.
@@ -73,7 +73,8 @@ yarn lint
 ## Build and quality expectations
 
 - Keep `yarn lint` clean for changed code.
-- Ensure `yarn build` succeeds after non-trivial changes.
+- Ensure `yarn test` and `yarn build` succeed after non-trivial changes.
+- Keep `useDefineForClassFields: false` in tsconfig; Lit's decorated reactive properties break without it.
 - Do not introduce unrelated refactors in focused changes.
 - If updating build tooling, keep dev and prod Rollup configs consistent.
 

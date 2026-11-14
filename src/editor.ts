@@ -30,9 +30,20 @@ const GENERAL_SCHEMA: readonly HaFormSchema[] = [
     schema: [
       { name: 'row_limit', selector: { number: { min: 0, mode: 'box' } } },
       { name: 'card_height', selector: { text: {} } },
+      { name: 'page_size', selector: { number: { min: 0, mode: 'box' } } },
+      { name: 'page_interval', selector: { number: { min: 0, mode: 'box', unit_of_measurement: 's' } } },
     ],
   },
+  { name: 'empty_message', selector: { text: {} } },
   { name: 'show_header', selector: { boolean: {} } },
+] as const;
+
+/* ─── Filter sub-schema (rendered by <ha-form>) ────────────── */
+const FILTER_SCHEMA: readonly HaFormSchema[] = [
+  { name: 'include', selector: { text: { multiple: true } } },
+  { name: 'exclude', selector: { text: { multiple: true } } },
+  { name: 'fields', selector: { text: { multiple: true } } },
+  { name: 'case_sensitive', selector: { boolean: {} } },
 ] as const;
 
 /* ─── Sort sub-schema (rendered by <ha-form>) ──────────────── */
@@ -118,6 +129,7 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
         )}
         ${this._renderSection('columns', 'Columns', this._renderColumnsSection())}
         ${this._renderSection('sort', 'Sort', this._renderSortSection())}
+        ${this._renderSection('filter', 'Filter', this._renderFilterSection())}
       </div>
     `;
   }
@@ -164,7 +176,7 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
     };
 
     // Handle optional string fields
-    for (const key of ['title', 'feed_attribute', 'card_height'] as const) {
+    for (const key of ['title', 'feed_attribute', 'card_height', 'empty_message'] as const) {
       const val = updated[key] as string | undefined;
       if (val && val.trim() !== '') {
         (config as unknown as Record<string, unknown>)[key] = val;
@@ -173,12 +185,14 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
       }
     }
 
-    // Handle row_limit (number)
-    const rl = updated.row_limit;
-    if (rl !== undefined && rl !== null && rl !== '') {
-      config.row_limit = Number(rl);
-    } else {
-      delete config.row_limit;
+    // Handle optional numbers; 0 or empty removes the option.
+    for (const key of ['row_limit', 'page_size', 'page_interval'] as const) {
+      const val = updated[key];
+      if (val !== undefined && val !== null && val !== '' && Number(val) > 0) {
+        config[key] = Number(val);
+      } else {
+        delete config[key];
+      }
     }
 
     // Handle boolean
@@ -194,7 +208,58 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
       feed_attribute: 'Feed Attribute',
       row_limit: 'Row Limit',
       card_height: 'Card Height',
+      page_size: 'Rows per Page',
+      page_interval: 'Auto-advance Pages Every',
+      empty_message: 'Message When Empty',
       show_header: 'Show Header',
+    };
+    return labels[schema.name] ?? schema.name;
+  };
+
+  /* ── Filter section ───────────────────────────────────────── */
+
+  private _renderFilterSection(): TemplateResult {
+    return html`
+      <div class="helper">
+        Show only rows containing an "include" keyword and hide rows containing an "exclude" keyword. Searches the
+        column fields unless "Fields" is set.
+      </div>
+      <ha-form
+        .hass=${this.hass}
+        .data=${this._config?.filter ?? {}}
+        .schema=${FILTER_SCHEMA}
+        .computeLabel=${this._computeFilterLabel}
+        @value-changed=${this._onFilterChanged}
+      ></ha-form>
+    `;
+  }
+
+  private _onFilterChanged = (ev: CustomEvent): void => {
+    ev.stopPropagation();
+    if (!this._config) return;
+    const value = (ev.detail.value ?? {}) as NonNullable<ListCardConfig['filter']>;
+    const filter: NonNullable<ListCardConfig['filter']> = {};
+    for (const key of ['include', 'exclude', 'fields'] as const) {
+      const list = (value[key] ?? []).map((entry) => entry.trim()).filter(Boolean);
+      if (list.length) filter[key] = list;
+    }
+    if (value.case_sensitive) filter.case_sensitive = true;
+
+    const config = { ...this._config };
+    if (Object.keys(filter).length) {
+      config.filter = filter;
+    } else {
+      delete config.filter;
+    }
+    this._updateConfig(config);
+  };
+
+  private _computeFilterLabel = (schema: HaFormSchema): string => {
+    const labels: Record<string, string> = {
+      include: 'Include Keywords',
+      exclude: 'Exclude Keywords',
+      fields: 'Fields to Search',
+      case_sensitive: 'Case Sensitive',
     };
     return labels[schema.name] ?? schema.name;
   };
@@ -369,7 +434,62 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
                 data-field="postfix"
                 @input=${this._onColumnInput}
               ></ha-textfield>
+
+              <ha-textfield
+                label="Static Icon (icon type)"
+                .value=${column.icon ?? ''}
+                data-index=${String(index)}
+                data-field="icon"
+                @input=${this._onColumnInput}
+              ></ha-textfield>
+
+              <ha-selector
+                .hass=${this.hass}
+                .selector=${{
+                  select: {
+                    options: [
+                      { value: '', label: 'None' },
+                      { value: 'date', label: 'Date' },
+                      { value: 'time', label: 'Time' },
+                      { value: 'datetime', label: 'Date & Time' },
+                      { value: 'relative', label: 'Relative (2 hours ago)' },
+                    ],
+                    mode: 'dropdown',
+                  },
+                }}
+                .value=${column.format ?? ''}
+                label="Date Format"
+                data-index=${String(index)}
+                data-field="format"
+                @value-changed=${this._onColumnSelectorChanged}
+              ></ha-selector>
+
+              <ha-textfield
+                label="Link Target"
+                placeholder="_blank"
+                .value=${column.link_target ?? ''}
+                data-index=${String(index)}
+                data-field="link_target"
+                @input=${this._onColumnInput}
+              ></ha-textfield>
+
+              <ha-formfield label="Full Width Row">
+                <ha-switch
+                  .checked=${column.full_width === true}
+                  data-index=${String(index)}
+                  @change=${this._onFullWidthToggle}
+                ></ha-switch>
+              </ha-formfield>
             </div>
+
+            <ha-textfield
+              class="full"
+              label="Template, e.g. [[author]] – [[title]]"
+              .value=${column.template ?? ''}
+              data-index=${String(index)}
+              data-field="template"
+              @input=${this._onColumnInput}
+            ></ha-textfield>
 
             <!-- Advanced sub-accordion for style + actions -->
             <div class="accordion ${advOpen ? 'accordion--open' : ''} accordion--nested">
@@ -556,6 +676,23 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
       delete (col as unknown as Record<string, unknown>)[field];
     } else {
       (col as unknown as Record<string, unknown>)[field] = value;
+    }
+    columns[index] = col;
+    this._updateConfig({ ...this._config, columns });
+  };
+
+  private _onFullWidthToggle = (ev: Event): void => {
+    if (!this._config) return;
+    const el = ev.currentTarget as HTMLInputElement & { dataset: DOMStringMap };
+    const index = Number.parseInt(el.dataset.index ?? '', 10);
+    if (Number.isNaN(index)) return;
+
+    const columns = [...(this._config.columns ?? [])];
+    const col: ColumnConfig = { ...columns[index] };
+    if (el.checked) {
+      col.full_width = true;
+    } else {
+      delete col.full_width;
     }
     columns[index] = col;
     this._updateConfig({ ...this._config, columns });

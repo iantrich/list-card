@@ -5,6 +5,21 @@ import { styleMap } from 'lit/directives/style-map.js';
 import './editor';
 import { CARD_DESCRIPTION, CARD_EDITOR_NAME, CARD_NAME, CARD_VERSION } from './const';
 import type { ActionConfig, ColumnConfig, FeedRow, HomeAssistant, ListCardConfig } from './types';
+import {
+  computeCellText,
+  extractRows,
+  FILE_LIST_ATTRIBUTE,
+  filterRows,
+  getValue,
+  replacePlaceholders,
+  resolveCardHeight,
+  resolveImageUrl,
+  resolveLink,
+  rowsWithColumns,
+  sortRows,
+  stringifyValue,
+  styleListToObject,
+} from './utils';
 
 const FILE_LIST_COLUMNS: ColumnConfig[] = [
   { title: 'Path', field: 'path' },
@@ -14,6 +29,11 @@ const FILE_LIST_COLUMNS: ColumnConfig[] = [
   { title: 'Ext', field: 'ext' },
 ];
 
+const HOLD_DELAY_MS = 500;
+const DOUBLE_TAP_WINDOW_MS = 250;
+
+type ActionKind = 'tap' | 'hold' | 'double_tap';
+
 @customElement(CARD_NAME)
 export class ListCard extends LitElement {
   @property({ attribute: false })
@@ -22,9 +42,18 @@ export class ListCard extends LitElement {
   @state()
   private _config?: ListCardConfig;
 
+  @state()
+  private _page = 0;
+
   private _holdTimer?: ReturnType<typeof setTimeout>;
+  private _tapTimer?: ReturnType<typeof setTimeout>;
+  private _pageTimer?: ReturnType<typeof setInterval>;
+  private _holdFired = false;
+  private _pageCount = 1;
 
   protected createRenderRoot(): ShadowRoot {
+    // Inject styles as <style> tags rather than adoptedStyleSheets so the card
+    // renders correctly inside HA's nested shadow roots and older browsers.
     const root = this.shadowRoot ?? this.attachShadow({ mode: 'open' });
     const ctor = this.constructor as typeof LitElement;
     for (const s of ctor.elementStyles) {
@@ -36,122 +65,243 @@ export class ListCard extends LitElement {
   }
 
   public setConfig(config: ListCardConfig): void {
-    if (!config.entity) {
+    if (!config || !config.entity) {
       throw new Error('Please define an entity');
     }
+    if (config.columns !== undefined && !Array.isArray(config.columns)) {
+      throw new Error('columns must be a list');
+    }
+    if (config.sort && !config.sort.value) {
+      throw new Error('You need to specify a value to sort on');
+    }
 
-    const normalizedConfig: ListCardConfig = {
+    this._config = {
       ...config,
       columns:
-        config.feed_attribute === 'file_list' && (!config.columns || config.columns.length === 0)
+        config.feed_attribute === FILE_LIST_ATTRIBUTE && (!config.columns || config.columns.length === 0)
           ? FILE_LIST_COLUMNS
           : config.columns,
     };
-
-    this._config = normalizedConfig;
+    this._page = 0;
+    this._restartPageTimer();
   }
+
+  public connectedCallback(): void {
+    super.connectedCallback();
+    this._restartPageTimer();
+  }
+
+  public disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._stopPageTimer();
+    this._clearHold();
+    if (this._tapTimer) {
+      clearTimeout(this._tapTimer);
+      this._tapTimer = undefined;
+    }
+  }
+
+  /* ── Rendering ─────────────────────────────────────────────── */
 
   protected render() {
     if (!this.hass || !this._config) {
-      this.style.display = 'none';
       return nothing;
     }
 
-    const state = this.hass.states[this._config.entity];
-    if (!state) {
-      this.style.display = 'none';
-      return nothing;
+    const config = this._config;
+    const entity = this.hass.states[config.entity];
+    if (!entity) {
+      return this._renderWarning(`Entity not available: ${config.entity}`);
     }
 
-    const feed = this._getFeedRows(state.attributes);
-    const rows = this._getLimitedRows(feed);
-    const columns = this._config.columns ?? [];
-
-    if (rows.length === 0 || columns.length === 0) {
-      this.style.display = 'none';
-      return nothing;
+    const feed = extractRows(entity.attributes, config.feed_attribute);
+    if (!feed.ok) {
+      const available = feed.available.length ? ` Available attributes: ${feed.available.join(', ')}` : '';
+      return this._renderWarning(
+        `Attribute '${config.feed_attribute}' not found on ${config.entity}. Attribute names are case-sensitive.${available}`,
+      );
     }
 
-    this.style.display = 'block';
+    const columns = config.columns ?? [];
+    if (columns.length === 0) {
+      const fields = feed.rows[0] ? Object.keys(feed.rows[0]).join(', ') : '';
+      return this._renderWarning(
+        `No columns configured.${fields ? ` Fields available in the first row: ${fields}` : ''}`,
+      );
+    }
+
+    const rows = this._visibleRows(feed.rows, columns);
+    if (rows.length === 0) {
+      if (!config.empty_message) {
+        this.style.display = 'none';
+        return nothing;
+      }
+      this.style.display = '';
+      return html`<ha-card .header=${config.title ?? ''}>
+        <div class="empty">${config.empty_message}</div>
+      </ha-card>`;
+    }
+
+    this.style.display = '';
+
+    const inlineColumns = columns.filter((column) => !column.full_width);
+    const gridStyle = {
+      maxHeight: resolveCardHeight(config.card_height),
+      '--list-card-columns': String(Math.max(inlineColumns.length, 1)),
+    };
 
     return html`
-      <ha-card .header=${this._config.title ?? ''}>
-        <div class="grid-container" style=${styleMap({ maxHeight: this._resolveCardHeight() })}>
-          ${this._config.show_header !== false
+      <ha-card .header=${config.title ?? ''}>
+        <div class="grid-container" style=${styleMap(gridStyle)}>
+          ${config.show_header !== false && inlineColumns.some((column) => column.title)
             ? html`
-                <div class="grid-row">
-                  ${columns.map(
-                    (column) => html`<div class="grid-cell grid-header ${column.field}">${column.title}</div>`,
+                <div class="grid-row grid-header-row">
+                  ${inlineColumns.map(
+                    (column) =>
+                      html`<div
+                        class="grid-cell grid-header ${this._fieldClass(column)}"
+                        style=${styleMap(styleListToObject(column.style))}
+                      >
+                        ${column.title}
+                      </div>`,
                   )}
                 </div>
               `
             : nothing}
           ${rows.map((row) => this._renderRow(row, columns))}
         </div>
+        ${this._renderPager()}
       </ha-card>
     `;
   }
 
+  private _renderWarning(message: string): TemplateResult {
+    this.style.display = '';
+    return html`<ha-card .header=${this._config?.title ?? ''}>
+      <div class="warning">${message}</div>
+    </ha-card>`;
+  }
+
+  private _visibleRows(allRows: FeedRow[], columns: ColumnConfig[]): FeedRow[] {
+    const config = this._config!;
+    const prepared = rowsWithColumns(filterRows(sortRows(allRows, config.sort), config.filter, columns), columns);
+    const limited = config.row_limit && config.row_limit > 0 ? prepared.slice(0, config.row_limit) : prepared;
+
+    const pageSize = config.page_size && config.page_size > 0 ? config.page_size : 0;
+    if (!pageSize) {
+      this._pageCount = 1;
+      return limited;
+    }
+
+    this._pageCount = Math.max(1, Math.ceil(limited.length / pageSize));
+    const page = Math.min(this._page, this._pageCount - 1);
+    return limited.slice(page * pageSize, page * pageSize + pageSize);
+  }
+
+  private _renderPager(): TemplateResult | typeof nothing {
+    if (this._pageCount <= 1) {
+      return nothing;
+    }
+    const page = Math.min(this._page, this._pageCount - 1);
+    return html`
+      <div class="pager">
+        <button type="button" class="pager-button" aria-label="Previous page" @click=${() => this._changePage(-1)}>
+          <ha-icon icon="mdi:chevron-left"></ha-icon>
+        </button>
+        <span class="pager-label">${page + 1} / ${this._pageCount}</span>
+        <button type="button" class="pager-button" aria-label="Next page" @click=${() => this._changePage(1)}>
+          <ha-icon icon="mdi:chevron-right"></ha-icon>
+        </button>
+      </div>
+    `;
+  }
+
+  private _changePage(delta: number, fromTimer = false): void {
+    const count = this._pageCount;
+    if (count <= 1) {
+      return;
+    }
+    this._page = (((Math.min(this._page, count - 1) + delta) % count) + count) % count;
+    if (!fromTimer) {
+      // Manual navigation resets the auto-advance countdown.
+      this._restartPageTimer();
+    }
+  }
+
+  private _restartPageTimer(): void {
+    this._stopPageTimer();
+    const interval = this._config?.page_interval;
+    if (!this.isConnected || !this._config?.page_size || !interval || interval <= 0) {
+      return;
+    }
+    this._pageTimer = setInterval(() => this._changePage(1, true), interval * 1000);
+  }
+
+  private _stopPageTimer(): void {
+    if (this._pageTimer) {
+      clearInterval(this._pageTimer);
+      this._pageTimer = undefined;
+    }
+  }
+
+  private _fieldClass(column: ColumnConfig): string {
+    // Keep the legacy per-field class so existing card-mod styles still apply.
+    return (column.field ?? '').replace(/[^\w-]/g, '_');
+  }
+
   private _renderRow(row: FeedRow, columns: ColumnConfig[]): TemplateResult {
-    return html` <div class="grid-row">${columns.map((column) => this._renderCell(row, column))}</div> `;
+    return html`<div class="grid-row">${columns.map((column) => this._renderCell(row, column))}</div>`;
   }
 
   private _renderCell(row: FeedRow, column: ColumnConfig): TemplateResult {
-    const tapAction = column.tap_action;
-    const holdAction = column.hold_action;
-    const doubleTapAction = column.double_tap_action;
-    const hasAction = Boolean(tapAction || holdAction || doubleTapAction);
-
-    const cellContent = this._renderCellContent(row, column);
-    const className = `grid-cell ${column.field}${hasAction ? ' actionable' : ''}`;
+    const hasAction = Boolean(column.tap_action || column.hold_action || column.double_tap_action);
+    const classes = ['grid-cell', this._fieldClass(column)];
+    if (hasAction) classes.push('actionable');
+    if (column.full_width) classes.push('full-width');
+    if (column.type) classes.push(`type-${column.type}`);
 
     return html`
       <div
-        class=${className}
-        style=${styleMap(this._columnStyleObject(column))}
-        @click=${() => tapAction && this._handleAction(tapAction, row)}
-        @dblclick=${() => doubleTapAction && this._handleAction(doubleTapAction, row)}
-        @touchstart=${() => this._startHold(holdAction, row)}
-        @touchend=${this._clearHold}
-        @touchcancel=${this._clearHold}
+        class=${classes.join(' ')}
+        style=${styleMap(styleListToObject(column.style))}
+        @click=${hasAction ? (ev: Event) => this._onClick(ev, column, row) : undefined}
+        @dblclick=${hasAction ? (ev: Event) => this._onDoubleClick(ev, column, row) : undefined}
+        @pointerdown=${column.hold_action ? () => this._startHold(column, row) : undefined}
+        @pointerup=${column.hold_action ? this._clearHold : undefined}
+        @pointerleave=${column.hold_action ? this._clearHold : undefined}
+        @pointercancel=${column.hold_action ? this._clearHold : undefined}
       >
-        ${cellContent}
+        ${this._renderCellContent(row, column)}
       </div>
     `;
   }
 
   private _renderCellContent(row: FeedRow, column: ColumnConfig): TemplateResult {
-    const rawValue = row[column.field];
-
     if (column.type === 'image') {
-      const url = this._resolveImageUrl(rawValue);
+      const url = resolveImageUrl(getValue(row, column.field));
+      if (!url) {
+        return html``;
+      }
       const width = column.width ?? 70;
       const height = column.height ?? 90;
-      const image = html`<img src=${String(url ?? '')} width=${String(width)} height=${String(height)} />`;
+      const image = html`<img
+        src=${url}
+        width=${String(width)}
+        height=${String(height)}
+        loading="lazy"
+        alt=""
+        style=${styleMap(styleListToObject(column.image_style))}
+      />`;
       return this._wrapLinkIfNeeded(column, row, image);
     }
 
     if (column.type === 'icon') {
-      const icon = html`<ha-icon .icon=${String(rawValue ?? '')}></ha-icon>`;
-      return this._wrapLinkIfNeeded(column, row, icon);
+      const icon = column.icon ?? stringifyValue(getValue(row, column.field));
+      return this._wrapLinkIfNeeded(column, row, html`<ha-icon .icon=${icon}></ha-icon>`);
     }
 
-    let value = this._stringifyValue(rawValue);
-
-    if (column.regex) {
-      const match = new RegExp(column.regex, 'u').exec(value);
-      value = match ? String(match[0]) : '';
-    }
-
-    if (column.prefix) {
-      value = `${column.prefix}${value}`;
-    }
-
-    if (column.postfix) {
-      value = `${value}${column.postfix}`;
-    }
-
-    const text = html`<span>${value}</span>`;
+    const locale = this.hass?.locale?.language ?? this.hass?.language;
+    const text = html`<span>${computeCellText(row, column, locale)}</span>`;
     return this._wrapLinkIfNeeded(column, row, text);
   }
 
@@ -160,138 +310,65 @@ export class ListCard extends LitElement {
       return content;
     }
 
-    const href = this._stringifyValue(row[column.add_link]).replace('config/www', 'local');
-    return html`<a href=${href} target="_blank" rel="noreferrer noopener">${content}</a>`;
+    const href = resolveLink(getValue(row, column.add_link));
+    if (!href) {
+      return content;
+    }
+    const target = column.link_target ?? '_blank';
+    return html`<a href=${href} target=${target} rel="noreferrer noopener">${content}</a>`;
   }
 
-  private _getFeedRows(attributes: Record<string, unknown>): FeedRow[] {
-    if (!this._config) {
-      return [];
+  /* ── Actions ───────────────────────────────────────────────── */
+
+  private _onClick(ev: Event, column: ColumnConfig, row: FeedRow): void {
+    if (this._holdFired) {
+      // The pointer was held long enough to trigger hold_action; swallow the click.
+      this._holdFired = false;
+      ev.preventDefault();
+      return;
     }
-
-    const source = this._config.feed_attribute ? attributes[this._config.feed_attribute] : (attributes as unknown);
-
-    if (!source) {
-      return [];
+    if (!column.tap_action) {
+      return;
     }
+    ev.preventDefault();
 
-    if (this._config.feed_attribute === 'file_list') {
-      if (!Array.isArray(source)) {
-        return [];
+    if (column.double_tap_action) {
+      // Wait briefly so a double tap doesn't also fire the tap action.
+      if (this._tapTimer) {
+        clearTimeout(this._tapTimer);
+        this._tapTimer = undefined;
+        return;
       }
-
-      const files = source.filter((value): value is string => typeof value === 'string');
-      return this._transformFeed(files);
-    }
-
-    const rows = Array.isArray(source)
-      ? source
-      : typeof source === 'object' && source !== null
-        ? Object.values(source)
-        : [];
-
-    const normalizedRows = rows.filter((row): row is FeedRow => typeof row === 'object' && row !== null);
-
-    return normalizedRows;
-  }
-
-  private _transformFeed(oldFeed: string[]): FeedRow[] {
-    return oldFeed.map((file) => {
-      const path = file.substring(0, file.lastIndexOf('/') + 1);
-      const filenameParts = file.split('/').pop()?.split('.') ?? [''];
-      const filename = filenameParts[0];
-      const extension = filenameParts[filenameParts.length - 1];
-      const filenameWithExt = `${filename}.${extension}`;
-
-      const filenameFormat = /^\d{14}$/;
-      if (filenameFormat.test(filename)) {
-        const fileDate = new Date(
-          `${filename.slice(0, 4)}-${filename.slice(4, 6)}-${filename.slice(6, 8)}T${filename.slice(8, 10)}:${filename.slice(10, 12)}:${filename.slice(12)}`,
-        );
-
-        return {
-          path,
-          name: fileDate.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: 'numeric',
-            hour12: true,
-          }),
-          filename: filenameWithExt,
-          fullpath: `${path}${filenameWithExt}`,
-          ext: extension,
-        };
-      }
-
-      return {
-        path,
-        name: filename,
-        filename: filenameWithExt,
-        fullpath: `${path}${filenameWithExt}`,
-        ext: extension,
-      };
-    });
-  }
-
-  private _getLimitedRows(feed: FeedRow[]): FeedRow[] {
-    if (!this._config) {
-      return [];
-    }
-
-    const sortedFeed = this._sortFeed(feed);
-    const columns = this._config.columns ?? [];
-
-    const rowsWithColumns = sortedFeed.filter((row) =>
-      columns.some((column) => Object.prototype.hasOwnProperty.call(row, column.field)),
-    );
-
-    const rowLimit = this._config.row_limit ?? rowsWithColumns.length;
-    return rowsWithColumns.slice(0, rowLimit);
-  }
-
-  private _sortFeed(feed: FeedRow[]): FeedRow[] {
-    if (!this._config?.sort) {
-      return [...feed];
-    }
-
-    const sortField = this._config.sort.value;
-    if (!sortField) {
-      throw new Error('You need to specify a value to sort on');
-    }
-
-    const isReverse = this._config.sort.reverse ?? false;
-    return [...feed].sort((first, second) => {
-      const valueA = first[sortField];
-      const valueB = second[sortField];
-
-      if (valueA === valueB) {
-        return 0;
-      }
-
-      if (valueA === undefined || valueA === null) {
-        return isReverse ? 1 : -1;
-      }
-
-      if (valueB === undefined || valueB === null) {
-        return isReverse ? -1 : 1;
-      }
-
-      const result = String(valueA).localeCompare(String(valueB), undefined, { numeric: true });
-      return isReverse ? -result : result;
-    });
-  }
-
-  private _startHold(action: ActionConfig | undefined, row: FeedRow): void {
-    if (!action) {
+      this._tapTimer = setTimeout(() => {
+        this._tapTimer = undefined;
+        this._handleAction(column, row, 'tap');
+      }, DOUBLE_TAP_WINDOW_MS);
       return;
     }
 
+    this._handleAction(column, row, 'tap');
+  }
+
+  private _onDoubleClick(ev: Event, column: ColumnConfig, row: FeedRow): void {
+    if (!column.double_tap_action) {
+      return;
+    }
+    ev.preventDefault();
+    if (this._tapTimer) {
+      clearTimeout(this._tapTimer);
+      this._tapTimer = undefined;
+    }
+    this._handleAction(column, row, 'double_tap');
+  }
+
+  private _startHold(column: ColumnConfig, row: FeedRow): void {
     this._clearHold();
+    this._holdFired = false;
     this._holdTimer = setTimeout(() => {
-      this._handleAction(action, row);
-    }, 500);
+      this._holdTimer = undefined;
+      this._holdFired = true;
+      this._handleAction(column, row, 'hold');
+    }, HOLD_DELAY_MS);
   }
 
   private _clearHold = (): void => {
@@ -301,144 +378,65 @@ export class ListCard extends LitElement {
     }
   };
 
-  private _handleAction(action: ActionConfig, row: FeedRow): void {
+  private _handleAction(column: ColumnConfig, row: FeedRow, kind: ActionKind): void {
+    const action = column[`${kind}_action`] as ActionConfig | undefined;
     if (!action?.action) {
-      console.warn('Invalid action object:', action);
+      console.warn('list-card: invalid action config', action);
+      return;
+    }
+    if (action.action === 'none') {
       return;
     }
 
-    const replacedAction = this._replacePlaceholdersInAction(structuredClone(action) as ActionConfig, row);
-
-    switch (replacedAction.action) {
-      case 'call-service':
-      case 'navigate':
-      case 'fire-dom-event': {
-        const event = new Event('hass-action', {
-          bubbles: true,
-          composed: true,
-        }) as Event & {
-          detail: {
-            config: { tap_action: ActionConfig };
-            action: 'tap';
-          };
-        };
-
-        event.detail = {
-          config: { tap_action: replacedAction },
-          action: 'tap',
-        };
-        this.dispatchEvent(event);
-        break;
-      }
-      default:
-        console.warn('Unsupported action type:', replacedAction.action);
-    }
-  }
-
-  private _replacePlaceholdersInAction(action: ActionConfig, row: FeedRow): ActionConfig {
-    const traverse = (value: unknown): unknown => {
-      if (typeof value === 'string') {
-        let replaced = value;
-        const placeholders = replaced.match(/\[\[(.*?)\]\]/g);
-
-        if (!placeholders) {
-          return replaced;
-        }
-
-        placeholders.forEach((placeholder) => {
-          const field = placeholder.substring(2, placeholder.length - 2);
-          if (!Object.prototype.hasOwnProperty.call(row, field)) {
-            throw new Error(`Invalid field '${field}' specified in action: ${JSON.stringify(action)}`);
-          }
-
-          replaced = replaced.replace(placeholder, this._stringifyValue(row[field]));
-        });
-
-        return replaced;
-      }
-
-      if (Array.isArray(value)) {
-        return value.map((entry) => traverse(entry));
-      }
-
-      if (value && typeof value === 'object') {
-        const result: Record<string, unknown> = {};
-        Object.entries(value).forEach(([key, entry]) => {
-          result[key] = traverse(entry);
-        });
-        return result;
-      }
-
-      return value;
+    const resolved = replacePlaceholders(structuredClone(action), row);
+    const event = new Event('hass-action', { bubbles: true, composed: true }) as Event & {
+      detail: { config: Record<string, unknown>; action: string };
     };
-
-    return traverse(action) as ActionConfig;
+    // HA's action handler reads `<kind>_action` from the config and uses `entity`
+    // for more-info / toggle actions.
+    event.detail = {
+      config: { entity: this._config?.entity, [`${kind}_action`]: resolved },
+      action: kind,
+    };
+    this.dispatchEvent(event);
   }
 
-  private _resolveImageUrl(value: unknown): string {
-    if (Array.isArray(value)) {
-      const first = value[0];
-      if (first && typeof first === 'object' && 'url' in first) {
-        return String((first as { url: unknown }).url ?? '');
-      }
-      return '';
-    }
-
-    return this._stringifyValue(value);
-  }
-
-  private _columnStyleObject(column: ColumnConfig): Record<string, string> {
-    const styleMapObject: Record<string, string> = {};
-    (column.style ?? []).forEach((styleEntry) => {
-      Object.entries(styleEntry).forEach(([key, value]) => {
-        styleMapObject[key] = value;
-      });
-    });
-
-    return styleMapObject;
-  }
-
-  private _resolveCardHeight(): string {
-    const value = this._config?.card_height;
-    if (value === undefined || value === null || value === '') {
-      return '300px';
-    }
-
-    if (typeof value === 'number') {
-      return `${value}px`;
-    }
-
-    if (/^\d+$/.test(value.trim())) {
-      return `${value.trim()}px`;
-    }
-
-    return value;
-  }
-
-  private _stringifyValue(value: unknown): string {
-    if (value === null || value === undefined) {
-      return '';
-    }
-
-    return typeof value === 'string' ? value : String(value);
-  }
+  /* ── Lovelace API ──────────────────────────────────────────── */
 
   public getCardSize(): number {
-    return 1;
+    const rows = this._config?.page_size ?? this._config?.row_limit ?? 5;
+    return Math.min(Math.max(1, Math.ceil(rows / 2) + (this._config?.title ? 1 : 0)), 10);
+  }
+
+  public getGridOptions() {
+    return { columns: 12, min_columns: 6, rows: 'auto' as const };
   }
 
   public static async getConfigElement(): Promise<HTMLElement> {
     return document.createElement(CARD_EDITOR_NAME);
   }
 
-  public static getStubConfig(): ListCardConfig {
+  public static getStubConfig(hass?: HomeAssistant): ListCardConfig {
+    // Prefer an entity that actually carries a list attribute (e.g. a feedparser sensor).
+    let entity = '';
+    let feedAttribute: string | undefined;
+    for (const [entityId, state] of Object.entries(hass?.states ?? {})) {
+      const listAttribute = Object.entries(state?.attributes ?? {}).find(
+        ([, value]) => Array.isArray(value) && value.length > 0 && typeof value[0] === 'object',
+      );
+      if (listAttribute) {
+        entity = entityId;
+        feedAttribute = listAttribute[0];
+        break;
+      }
+    }
+
     return {
       type: `custom:${CARD_NAME}`,
-      entity: '',
+      entity,
       title: 'List Card',
-      show_header: true,
-      columns: [],
-      card_height: '300px',
+      ...(feedAttribute ? { feed_attribute: feedAttribute } : {}),
+      columns: [{ title: 'Title', field: 'title' }],
     };
   }
 
@@ -456,8 +454,9 @@ export class ListCard extends LitElement {
 
     .grid-row {
       display: grid;
-      grid-template-columns: repeat(var(--list-card-columns, 1), minmax(100px, 1fr));
+      grid-template-columns: repeat(var(--list-card-columns, 1), minmax(0, 1fr));
       gap: 8px;
+      align-items: center;
     }
 
     .grid-header {
@@ -466,11 +465,17 @@ export class ListCard extends LitElement {
     }
 
     .grid-cell {
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       user-select: text;
       -webkit-user-select: text;
+    }
+
+    .grid-cell.full-width {
+      grid-column: 1 / -1;
+      white-space: normal;
     }
 
     .actionable {
@@ -486,12 +491,49 @@ export class ListCard extends LitElement {
       max-width: 100%;
       object-fit: contain;
     }
-  `;
 
-  protected updated(): void {
-    const columns = this._config?.columns?.length ?? 1;
-    this.style.setProperty('--list-card-columns', String(columns));
-  }
+    .pager {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 16px 12px;
+    }
+
+    .pager-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: none;
+      color: var(--primary-text-color);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 50%;
+    }
+
+    .pager-button:hover {
+      background: var(--secondary-background-color);
+    }
+
+    .pager-label {
+      color: var(--secondary-text-color);
+      font-size: 0.9em;
+    }
+
+    .warning {
+      padding: 16px;
+      color: var(--primary-text-color);
+      background: rgba(var(--rgb-warning-color, 255, 166, 0), 0.15);
+      border-left: 4px solid var(--warning-color, #ffa600);
+      word-break: break-word;
+    }
+
+    .empty {
+      padding: 16px;
+      color: var(--secondary-text-color);
+    }
+  `;
 }
 
 declare global {
@@ -501,6 +543,7 @@ declare global {
       name: string;
       preview: boolean;
       description: string;
+      documentationURL?: string;
     }>;
   }
 }
@@ -515,6 +558,7 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: CARD_NAME,
   name: 'List Card',
-  preview: false,
+  preview: true,
   description: CARD_DESCRIPTION,
+  documentationURL: 'https://github.com/iantrich/list-card',
 });
