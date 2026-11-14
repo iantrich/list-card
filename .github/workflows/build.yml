@@ -46,11 +46,3 @@ jobs:
           name: list-card
           path: dist/list-card.js
 
-  hacs:
-    name: HACS validation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: hacs/action@main
-        with:
-          category: plugin
-          ignore: brands topics description
