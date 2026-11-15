@@ -133,6 +133,12 @@ describe('formatValue (#55)', () => {
     );
   });
 
+  it('leaves year-less strings (feedparser default date_format) unchanged', () => {
+    // V8 would otherwise parse these as the year 2001.
+    expect(formatValue('Fri, Nov 13 07:00 PM', 'relative', 'en-US')).toBe('Fri, Nov 13 07:00 PM');
+    expect(formatValue('Fri, Nov 13 07:00 PM', 'date', 'en-US')).toBe('Fri, Nov 13 07:00 PM');
+  });
+
   it('formats relative times', () => {
     const now = new Date('2023-10-22T22:30:00Z');
     expect(formatValue(iso, 'relative', 'en-US', undefined, now)).toBe('2 hours ago');

@@ -94,6 +94,10 @@ function toDate(value: unknown): Date | undefined {
   }
 
   if (typeof value === 'string' && value.trim() !== '') {
+    // Without a four-digit year, Date silently guesses one (2001), so leave such strings as-is.
+    if (!/\d{4}/.test(value)) {
+      return undefined;
+    }
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? undefined : date;
   }

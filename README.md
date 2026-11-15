@@ -75,6 +75,8 @@ If the entity or attribute can't be found, the card shows a warning that names t
 | `hold_action`       | object        |          | Action to run on press-and-hold.                                                                                                                                                                                                        |
 | `double_tap_action` | object        |          | Action to run on double-tap.                                                                                                                                                                                                            |
 
+`format` needs a value that includes a four-digit year. Feedparser's default `date_format` (`%a, %b %d %I:%M %p`) has none, so those dates are shown as-is; set the feedparser `date_format` to something like `%Y-%m-%dT%H:%M:%S%z` to use `format`.
+
 Text order of operations: `template` (or `field`) → `format` → `regex` → `prefix`/`postfix`.
 
 A row is shown when it has a value for at least one configured column.
