@@ -274,8 +274,7 @@ export function transformFileList(files: string[]): FeedRow[] {
 }
 
 export type FeedResult =
-  | { ok: true; rows: FeedRow[] }
-  | { ok: false; reason: 'missing_attribute'; available: string[] };
+  { ok: true; rows: FeedRow[] } | { ok: false; reason: 'missing_attribute'; available: string[] };
 
 /** Extract the list of rows from an entity's attributes. */
 export function extractRows(attributes: Record<string, unknown>, feedAttribute?: string): FeedResult {

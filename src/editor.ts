@@ -274,17 +274,19 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
         <ha-switch .checked=${sortEnabled} @change=${this._onSortToggle}></ha-switch>
       </ha-formfield>
 
-      ${sortEnabled
-        ? html`
-            <ha-form
-              .hass=${this.hass}
-              .data=${this._config?.sort ?? { value: '', reverse: false }}
-              .schema=${SORT_SCHEMA}
-              .computeLabel=${this._computeSortLabel}
-              @value-changed=${this._onSortChanged}
-            ></ha-form>
-          `
-        : nothing}
+      ${
+        sortEnabled
+          ? html`
+              <ha-form
+                .hass=${this.hass}
+                .data=${this._config?.sort ?? { value: '', reverse: false }}
+                .schema=${SORT_SCHEMA}
+                .computeLabel=${this._computeSortLabel}
+                @value-changed=${this._onSortChanged}
+              ></ha-form>
+            `
+          : nothing
+      }
     `;
   }
 
@@ -327,9 +329,11 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
         <span>Configured: ${columns.length}</span>
         <button type="button" class="btn btn--primary" @click=${this._onAddColumn}>+ Add Column</button>
       </div>
-      ${columns.length === 0
-        ? html`<div class="helper">No columns configured.</div>`
-        : columns.map((col, i) => this._renderColumnAccordion(col, i))}
+      ${
+        columns.length === 0
+          ? html`<div class="helper">No columns configured.</div>`
+          : columns.map((col, i) => this._renderColumnAccordion(col, i))
+      }
     `;
   }
 
