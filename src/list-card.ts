@@ -153,21 +153,23 @@ export class ListCard extends LitElement {
     return html`
       <ha-card .header=${config.title ?? ''}>
         <div class="grid-container" style=${styleMap(gridStyle)}>
-          ${config.show_header !== false && inlineColumns.some((column) => column.title)
-            ? html`
-                <div class="grid-row grid-header-row">
-                  ${inlineColumns.map(
-                    (column) =>
-                      html`<div
-                        class="grid-cell grid-header ${this._fieldClass(column)}"
-                        style=${styleMap(styleListToObject(column.style))}
-                      >
-                        ${column.title}
-                      </div>`,
-                  )}
-                </div>
-              `
-            : nothing}
+          ${
+            config.show_header !== false && inlineColumns.some((column) => column.title)
+              ? html`
+                  <div class="grid-row grid-header-row">
+                    ${inlineColumns.map(
+                      (column) =>
+                        html`<div
+                          class="grid-cell grid-header ${this._fieldClass(column)}"
+                          style=${styleMap(styleListToObject(column.style))}
+                        >
+                          ${column.title}
+                        </div>`,
+                    )}
+                  </div>
+                `
+              : nothing
+          }
           ${rows.map((row) => this._renderRow(row, columns))}
         </div>
         ${this._renderPager()}
