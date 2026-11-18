@@ -152,7 +152,7 @@ export class ListCard extends LitElement {
 
     return html`
       <ha-card .header=${config.title ?? ''}>
-        <div class="grid-container" style=${styleMap(gridStyle)}>
+        <div class=${this._containerClass(config)} style=${styleMap(gridStyle)}>
           ${
             config.show_header !== false && inlineColumns.some((column) => column.title)
               ? html`
@@ -170,7 +170,7 @@ export class ListCard extends LitElement {
                 `
               : nothing
           }
-          ${rows.map((row) => this._renderRow(row, columns))}
+          ${rows.map((row, index) => this._renderRow(row, columns, index))}
         </div>
         ${this._renderPager()}
       </ha-card>
@@ -251,8 +251,17 @@ export class ListCard extends LitElement {
     return (column.field ?? '').replace(/[^\w-]/g, '_');
   }
 
-  private _renderRow(row: FeedRow, columns: ColumnConfig[]): TemplateResult {
-    return html`<div class="grid-row">${columns.map((column) => this._renderCell(row, column))}</div>`;
+  private _containerClass(config: ListCardConfig): string {
+    const classes = ['grid-container'];
+    if (config.wrap_text) classes.push('wrap-text');
+    if (config.striped_rows) classes.push('striped');
+    return classes.join(' ');
+  }
+
+  private _renderRow(row: FeedRow, columns: ColumnConfig[], index: number): TemplateResult {
+    // Parity classes are set here rather than via :nth-child so the header row doesn't shift the pattern.
+    const parity = index % 2 === 0 ? 'odd' : 'even';
+    return html`<div class="grid-row ${parity}">${columns.map((column) => this._renderCell(row, column))}</div>`;
   }
 
   private _renderCell(row: FeedRow, column: ColumnConfig): TemplateResult {
@@ -478,6 +487,23 @@ export class ListCard extends LitElement {
     .grid-cell.full-width {
       grid-column: 1 / -1;
       white-space: normal;
+    }
+
+    .wrap-text .grid-cell {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .grid-container.striped {
+      gap: 0;
+    }
+
+    .striped .grid-row {
+      padding: 4px 8px;
+    }
+
+    .striped .grid-row.even {
+      background-color: var(--secondary-background-color);
     }
 
     .actionable {

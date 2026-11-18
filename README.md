@@ -44,6 +44,8 @@ The card can be configured entirely from the dashboard UI: general options, colu
 | `page_size`      | number        |          | Show this many rows per page with previous / next buttons.                                                  |
 | `page_interval`  | number        |          | Seconds between automatic page changes (requires `page_size`). Handy for rotating headlines.                |
 | `show_header`    | boolean       | `true`   | Show the column header row. It's also hidden automatically when every column title is empty.                |
+| `wrap_text`      | boolean       | `false`  | Wrap long text onto multiple lines instead of cutting it off with an ellipsis.                              |
+| `striped_rows`   | boolean       | `false`  | Alternate row background colours for easier scanning.                                                       |
 | `card_height`    | string/number | `300px`  | Maximum height of the list before it scrolls. Numbers are treated as px.                                    |
 | `sort`           | object        |          | `value`: field to sort on (nested paths allowed). `reverse`: `true` for descending. Numbers sort naturally. |
 | `filter`         | object        |          | Keyword filter. See [Filtering](#filtering).                                                                |

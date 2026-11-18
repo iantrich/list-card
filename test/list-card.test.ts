@@ -109,6 +109,31 @@ describe('list-card', () => {
     expect($(card, '.empty')?.textContent).toBe('Nothing new');
   });
 
+  it('truncates text and leaves rows unstriped by default', async () => {
+    const card = await mount({ feed_attribute: 'entries', columns: [{ title: 'T', field: 'title' }] });
+    const container = $(card, '.grid-container')!;
+    expect(container.classList.contains('wrap-text')).toBe(false);
+    expect(container.classList.contains('striped')).toBe(false);
+  });
+
+  it('applies wrap_text and striped_rows (#87)', async () => {
+    const card = await mount({
+      feed_attribute: 'entries',
+      wrap_text: true,
+      striped_rows: true,
+      columns: [{ title: 'T', field: 'title' }],
+    });
+    const container = $(card, '.grid-container')!;
+    expect(container.classList.contains('wrap-text')).toBe(true);
+    expect(container.classList.contains('striped')).toBe(true);
+    // The header row must not shift the alternating pattern.
+    expect(bodyRows(card).map((row) => (row.classList.contains('odd') ? 'odd' : 'even'))).toEqual([
+      'odd',
+      'even',
+      'odd',
+    ]);
+  });
+
   it('lists available fields when no columns are configured', async () => {
     const card = await mount({ feed_attribute: 'entries' });
     expect($(card, '.warning')?.textContent).toContain('title, link, published');
