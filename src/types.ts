@@ -69,6 +69,10 @@ export interface ListCardConfig {
   /** Seconds between automatic page changes. Requires `page_size`. */
   page_interval?: number;
   show_header?: boolean;
+  /** Wrap long cell text onto multiple lines instead of truncating it. */
+  wrap_text?: boolean;
+  /** Alternate the background colour of each row. */
+  striped_rows?: boolean;
   card_height?: string | number;
   empty_message?: string;
   sort?: SortConfig;
