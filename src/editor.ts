@@ -35,7 +35,15 @@ const GENERAL_SCHEMA: readonly HaFormSchema[] = [
     ],
   },
   { name: 'empty_message', selector: { text: {} } },
-  { name: 'show_header', selector: { boolean: {} } },
+  {
+    name: '',
+    type: 'grid',
+    schema: [
+      { name: 'show_header', selector: { boolean: {} } },
+      { name: 'wrap_text', selector: { boolean: {} } },
+      { name: 'striped_rows', selector: { boolean: {} } },
+    ],
+  },
 ] as const;
 
 /* ─── Filter sub-schema (rendered by <ha-form>) ────────────── */
@@ -197,6 +205,14 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
 
     // Handle boolean
     config.show_header = updated.show_header !== false;
+    // Opt-in toggles: only keep them in the YAML when enabled.
+    for (const key of ['wrap_text', 'striped_rows'] as const) {
+      if (updated[key] === true) {
+        config[key] = true;
+      } else {
+        delete config[key];
+      }
+    }
 
     this._updateConfig(config);
   };
@@ -212,6 +228,8 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
       page_interval: 'Auto-advance Pages Every',
       empty_message: 'Message When Empty',
       show_header: 'Show Header',
+      wrap_text: 'Wrap Text',
+      striped_rows: 'Striped Rows',
     };
     return labels[schema.name] ?? schema.name;
   };
@@ -274,17 +292,19 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
         <ha-switch .checked=${sortEnabled} @change=${this._onSortToggle}></ha-switch>
       </ha-formfield>
 
-      ${sortEnabled
-        ? html`
-            <ha-form
-              .hass=${this.hass}
-              .data=${this._config?.sort ?? { value: '', reverse: false }}
-              .schema=${SORT_SCHEMA}
-              .computeLabel=${this._computeSortLabel}
-              @value-changed=${this._onSortChanged}
-            ></ha-form>
-          `
-        : nothing}
+      ${
+        sortEnabled
+          ? html`
+              <ha-form
+                .hass=${this.hass}
+                .data=${this._config?.sort ?? { value: '', reverse: false }}
+                .schema=${SORT_SCHEMA}
+                .computeLabel=${this._computeSortLabel}
+                @value-changed=${this._onSortChanged}
+              ></ha-form>
+            `
+          : nothing
+      }
     `;
   }
 
@@ -327,9 +347,11 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
         <span>Configured: ${columns.length}</span>
         <button type="button" class="btn btn--primary" @click=${this._onAddColumn}>+ Add Column</button>
       </div>
-      ${columns.length === 0
-        ? html`<div class="helper">No columns configured.</div>`
-        : columns.map((col, i) => this._renderColumnAccordion(col, i))}
+      ${
+        columns.length === 0
+          ? html`<div class="helper">No columns configured.</div>`
+          : columns.map((col, i) => this._renderColumnAccordion(col, i))
+      }
     `;
   }
 
