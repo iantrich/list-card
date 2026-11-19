@@ -207,7 +207,7 @@ describe('list-card', () => {
     expect($$(card, '.grid-header')).toHaveLength(2);
     expect($(card, '.grid-cell.full-width')).not.toBeNull();
     const container = $(card, '.grid-container') as HTMLElement;
-    expect(container.style.getPropertyValue('--list-card-columns')).toBe('2');
+    expect(container.style.getPropertyValue('--list-card-template')).toBe('minmax(0, 1fr) minmax(0, 1fr)');
   });
 
   it('filters rows by keyword (#14)', async () => {

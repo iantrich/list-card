@@ -418,7 +418,16 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
               ></ha-selector>
 
               <ha-textfield
-                label="Width"
+                label="Column width"
+                helper="e.g. 120px, 2fr, auto"
+                .value=${column.column_width?.toString() ?? ''}
+                data-index=${String(index)}
+                data-field="column_width"
+                @input=${this._onColumnInput}
+              ></ha-textfield>
+
+              <ha-textfield
+                label="Image width"
                 .value=${column.width?.toString() ?? ''}
                 data-index=${String(index)}
                 data-field="width"
@@ -662,7 +671,7 @@ export class ListCardEditor extends LitElement implements LovelaceCardEditor {
     const col: ColumnConfig = { ...columns[index] };
     const value = el.value?.trim() ?? '';
 
-    if (field === 'width' || field === 'height') {
+    if (field === 'width' || field === 'height' || field === 'column_width') {
       if (value === '') {
         delete col[field];
       } else if (/^\d+$/.test(value)) {

@@ -43,7 +43,10 @@ export interface ColumnConfig {
   icon?: string;
   style?: StyleList;
   image_style?: StyleList;
+  /** Image size for `type: image` columns. */
   width?: string | number;
+  /** Width of this column in the grid, e.g. `120px`, `2fr`, `auto`. A bare number is treated as `fr`. */
+  column_width?: string | number;
   height?: string | number;
   regex?: string;
   prefix?: string;

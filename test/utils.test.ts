@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyRegex,
+  buildGridTemplate,
   computeCellText,
   extractRows,
   filterRows,
@@ -10,6 +11,7 @@ import {
   renderTemplate,
   replacePlaceholders,
   resolveCardHeight,
+  resolveColumnTrack,
   resolveImageUrl,
   resolveLink,
   rowsWithColumns,
@@ -227,5 +229,30 @@ describe('misc', () => {
     expect(resolveLink('/config/www/media/a.jpg')).toBe('/local/media/a.jpg');
     expect(resolveLink('config/www/a.jpg')).toBe('/local/a.jpg');
     expect(resolveLink('https://example.com/config/www/a')).toBe('https://example.com/config/www/a');
+  });
+});
+
+describe('column width', () => {
+  it('resolves tracks', () => {
+    expect(resolveColumnTrack(undefined)).toBe('minmax(0, 1fr)');
+    expect(resolveColumnTrack(2)).toBe('minmax(0, 2fr)');
+    expect(resolveColumnTrack('3')).toBe('minmax(0, 3fr)');
+    expect(resolveColumnTrack('1.5fr')).toBe('minmax(0, 1.5fr)');
+    expect(resolveColumnTrack(' 120px ')).toBe('120px');
+    expect(resolveColumnTrack('20%')).toBe('20%');
+    expect(resolveColumnTrack('auto')).toBe('auto');
+  });
+
+  it('falls back for invalid values', () => {
+    expect(resolveColumnTrack('wide')).toBe('minmax(0, 1fr)');
+    expect(resolveColumnTrack(0)).toBe('minmax(0, 1fr)');
+    expect(resolveColumnTrack('url(x)')).toBe('minmax(0, 1fr)');
+  });
+
+  it('builds a template per column', () => {
+    expect(buildGridTemplate([{ title: 'a', field: 'a', column_width: '80px' }, { title: 'b', field: 'b' }])).toBe(
+      '80px minmax(0, 1fr)',
+    );
+    expect(buildGridTemplate([])).toBe('minmax(0, 1fr)');
   });
 });

@@ -402,6 +402,32 @@ export function resolveCardHeight(value: string | number | undefined | null): st
   return /^\d+$/.test(value.trim()) ? `${value.trim()}px` : value;
 }
 
+const DEFAULT_TRACK = 'minmax(0, 1fr)';
+const LENGTH_TRACK = /^\d*\.?\d+(px|%|em|rem|ch|vw|vh)$/;
+const FR_TRACK = /^(\d*\.?\d+)fr$/;
+
+/** Convert one column's `column_width` into a CSS grid track size. */
+export function resolveColumnTrack(value: string | number | undefined | null): string {
+  if (value === undefined || value === null || value === '') return DEFAULT_TRACK;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value > 0 ? `minmax(0, ${value}fr)` : DEFAULT_TRACK;
+  }
+  const text = value.trim();
+  if (/^\d*\.?\d+$/.test(text)) {
+    return Number(text) > 0 ? `minmax(0, ${text}fr)` : DEFAULT_TRACK;
+  }
+  const fr = FR_TRACK.exec(text);
+  if (fr) return Number(fr[1]) > 0 ? `minmax(0, ${fr[1]}fr)` : DEFAULT_TRACK;
+  if (LENGTH_TRACK.test(text) || ['auto', 'min-content', 'max-content'].includes(text)) return text;
+  return DEFAULT_TRACK;
+}
+
+/** Build the `grid-template-columns` value for the inline columns. */
+export function buildGridTemplate(columns: ColumnConfig[]): string {
+  if (columns.length === 0) return DEFAULT_TRACK;
+  return columns.map((column) => resolveColumnTrack(column.column_width)).join(' ');
+}
+
 /** Turn `config/www/...` paths from the Folder integration into `/local/...` URLs. */
 export function resolveLink(value: unknown): string {
   return stringifyValue(value).replace(/^\/?config\/www/, '/local');
