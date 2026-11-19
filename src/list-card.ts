@@ -6,6 +6,7 @@ import './editor';
 import { CARD_DESCRIPTION, CARD_EDITOR_NAME, CARD_NAME, CARD_VERSION } from './const';
 import type { ActionConfig, ColumnConfig, FeedRow, HomeAssistant, ListCardConfig } from './types';
 import {
+  buildGridTemplate,
   computeCellText,
   extractRows,
   FILE_LIST_ATTRIBUTE,
@@ -147,7 +148,7 @@ export class ListCard extends LitElement {
     const inlineColumns = columns.filter((column) => !column.full_width);
     const gridStyle = {
       maxHeight: resolveCardHeight(config.card_height),
-      '--list-card-columns': String(Math.max(inlineColumns.length, 1)),
+      '--list-card-template': buildGridTemplate(inlineColumns),
     };
 
     return html`
@@ -454,7 +455,7 @@ export class ListCard extends LitElement {
 
     .grid-row {
       display: grid;
-      grid-template-columns: repeat(var(--list-card-columns, 1), minmax(0, 1fr));
+      grid-template-columns: var(--list-card-template, minmax(0, 1fr));
       gap: 8px;
       align-items: center;
     }
