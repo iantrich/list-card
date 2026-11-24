@@ -1,9 +1,11 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 
 import './editor';
 import { CARD_DESCRIPTION, CARD_EDITOR_NAME, CARD_NAME, CARD_VERSION } from './const';
+import { sanitizeHtml } from './sanitize';
 import type { ActionConfig, ColumnConfig, FeedRow, HomeAssistant, ListCardConfig } from './types';
 import {
   buildGridTemplate,
@@ -313,7 +315,10 @@ export class ListCard extends LitElement {
     }
 
     const locale = this.hass?.locale?.language ?? this.hass?.language;
-    const text = html`<span>${computeCellText(row, column, locale)}</span>`;
+    // Feed values often contain markup (RSS descriptions etc.). It is rendered as HTML,
+    // but only after sanitizing; links are stripped when the cell is already a link.
+    const markup = sanitizeHtml(computeCellText(row, column, locale), !column.add_link);
+    const text = html`<span class="cell-html">${unsafeHTML(markup)}</span>`;
     return this._wrapLinkIfNeeded(column, row, text);
   }
 
@@ -488,6 +493,24 @@ export class ListCard extends LitElement {
     .grid-cell.full-width {
       grid-column: 1 / -1;
       white-space: normal;
+    }
+
+    /* Keep block-level feed markup on one line when the cell truncates. */
+    .grid-container:not(.wrap-text)
+      .grid-cell:not(.full-width)
+      .cell-html
+      :is(p, div, ul, ol, li, blockquote, pre, h1, h2, h3, h4, h5, h6) {
+      display: inline;
+      margin: 0;
+      padding: 0;
+    }
+
+    .cell-html > :first-child {
+      margin-top: 0;
+    }
+
+    .cell-html > :last-child {
+      margin-bottom: 0;
     }
 
     .wrap-text .grid-cell {

@@ -71,7 +71,7 @@ If the entity or attribute can't be found, the card shows a warning that names t
 | `full_width`        | boolean       | `false`  | Render this column on its own line spanning the whole card (e.g. a summary under the title). It's left out of the header row.                                                                                                           |
 | `style`             | list          |          | CSS applied to the column's cells and header, e.g. `- white-space: normal`.                                                                                                                                                             |
 | `icon`              | string        |          | For `type: icon`: a fixed icon such as `mdi:open-in-new` (otherwise the icon name comes from `field`).                                                                                                                                  |
-| `column_width`      | string/number | `1fr`    | Width of the column in the list, e.g. `120px`, `2fr`, `20%` or `auto`. A bare number means a share of the free space (`2` = `2fr`). Columns without it split the remaining space equally. |
+| `column_width`      | string/number | `1fr`    | Width of the column in the list, e.g. `120px`, `2fr`, `20%` or `auto`. A bare number means a share of the free space (`2` = `2fr`). Columns without it split the remaining space equally.                                               |
 | `width` / `height`  | string/number | 70 / 90  | Image size. Set both to `auto` to keep the original size, or one to `auto` to keep the aspect ratio.                                                                                                                                    |
 | `image_style`       | list          |          | CSS applied to the `<img>` itself, e.g. `- border-radius: 8px`.                                                                                                                                                                         |
 | `tap_action`        | object        |          | [Action](https://www.home-assistant.io/dashboards/actions/) to run on tap. Any action type works; `[[field]]` placeholders are filled from the row.                                                                                     |
@@ -81,6 +81,17 @@ If the entity or attribute can't be found, the card shows a warning that names t
 `format` needs a value that includes a four-digit year. Feedparser's default `date_format` (`%a, %b %d %I:%M %p`) has none, so those dates are shown as-is; set the feedparser `date_format` to something like `%Y-%m-%dT%H:%M:%S%z` to use `format`.
 
 Text order of operations: `template` (or `field`) → `format` → `regex` → `prefix`/`postfix`.
+
+### HTML in values
+
+Text columns render HTML, so feed markup like `<b>`, `<p>` and `<a>` shows as formatting and entities such as `&amp;` are decoded. You can use markup in `template`, `prefix` and `postfix` too (e.g. `prefix: "<b>"`, `postfix: "</b>"`). The final text is always sanitized first:
+
+- Only formatting tags are kept (`a`, `b`, `i`, `u`, `s`, `em`, `strong`, `small`, `mark`, `sub`, `sup`, `br`, `p`, `div`, `span`, `ul`, `ol`, `li`, `blockquote`, `code`, `pre`, `del`, `ins`, `abbr`, `h1`–`h6`, `img`). Other tags are removed, keeping their text.
+- Only `href`, `src`, `alt`, `title`, `width` and `height` attributes are kept, so `style`, `class` and event handlers are removed. Use the column `style` option for styling.
+- Links open in a new tab. In columns with `add_link`, links inside the value are removed so links don't nest.
+- When `wrap_text` is off, block tags such as `<p>` and `<ul>` are shown inline so the cell stays on one line.
+
+Because values are parsed as HTML, text that contains a bare `<` (for example `a<b`) may display incorrectly.
 
 A row is shown when it has a value for at least one configured column.
 
